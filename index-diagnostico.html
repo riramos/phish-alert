@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Canvia Phish Alert - DIAGNOSTICO</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f7fb;
+      color: #1a2b3c;
+      min-height: 100vh;
+      padding: 12px;
+    }
+    #diag {
+      white-space: pre-wrap;
+      font-family: Consolas, monospace;
+      font-size: 11px;
+      padding: 10px;
+      background: #1a2b3c;
+      color: #7CFC00;
+      border-radius: 6px;
+      min-height: 200px;
+      line-height: 1.5;
+    }
+    h1 { font-size: 14px; margin-bottom: 8px; color: #005293; }
+  </style>
+</head>
+<body>
+
+  <h1>DIAGNOSTICO - Reportar Phishing</h1>
+  <div id="diag">(esperando...)</div>
+
+  <script>
+    var diagLines = [];
+    var startTime = new Date().getTime();
+
+    function diag(msg) {
+      var elapsed = new Date().getTime() - startTime;
+      diagLines.push("[+" + elapsed + "ms] " + msg);
+      var el = document.getElementById('diag');
+      if (el) { el.textContent = diagLines.join('\n'); }
+    }
+
+    // Captura CUALQUIER error de JS que ocurra, incluso fuera de los bloques
+    // try/catch explicitos.
+    window.onerror = function (message, source, lineno, colno, error) {
+      diag("!!! window.onerror: " + message + " (linea " + lineno + ")");
+      return false;
+    };
+
+    diag("Script parseado y corriendo (JS basico OK).");
+    diag("typeof Office = " + (typeof Office));
+    diag("typeof Office.onReady = " + (typeof (window.Office && Office.onReady)));
+
+    var onReadyFired = false;
+
+    // Si Office.onReady nunca llama al callback, esto lo va a evidenciar
+    // despues de 6 segundos.
+    setTimeout(function () {
+      if (!onReadyFired) {
+        diag("!!! Office.onReady NUNCA se disparo despues de 6 segundos.");
+      }
+    }, 6000);
+
+    try {
+      Office.onReady(function (info) {
+        onReadyFired = true;
+        diag("Office.onReady SI se disparo.");
+        diag("info.host = " + (info ? info.host : "info es null/undefined"));
+        diag("Office.HostType.Outlook = " + (window.Office && Office.HostType ? Office.HostType.Outlook : "N/A"));
+
+        try {
+          diag("Office.context existe = " + !!(window.Office && Office.context));
+          diag("Office.context.mailbox existe = " + !!(window.Office && Office.context && Office.context.mailbox));
+
+          var item = Office.context.mailbox.item;
+          diag("Office.context.mailbox.item existe = " + !!item);
+
+          if (!item) {
+            diag("!!! item es null/undefined - no hay correo seleccionado o el contexto no cargo.");
+            return;
+          }
+
+          diag("Intentando item.subject.getAsync...");
+          item.subject.getAsync(function (result) {
+            diag("subject.getAsync callback recibido. status = " + result.status);
+            if (result.status === Office.AsyncResultStatus.Succeeded) {
+              diag("Asunto obtenido: " + result.value);
+            } else {
+              diag("!!! Error obteniendo asunto: " + JSON.stringify(result.error));
+            }
+          });
+
+          diag("Intentando leer item.from...");
+          var sender = item.from;
+          diag("item.from = " + JSON.stringify(sender));
+
+          diag("Intentando item.internetMessageId.getAsync...");
+          item.internetMessageId.getAsync(function (result) {
+            diag("internetMessageId.getAsync callback recibido. status = " + result.status);
+            if (result.status === Office.AsyncResultStatus.Succeeded) {
+              diag("messageId obtenido: " + result.value);
+            } else {
+              diag("!!! Error obteniendo messageId: " + JSON.stringify(result.error));
+            }
+          });
+
+          diag("Office.context.mailbox.userProfile = " + JSON.stringify(Office.context.mailbox.userProfile));
+
+        } catch (innerErr) {
+          diag("!!! Excepcion dentro de Office.onReady: " + innerErr.message);
+        }
+      });
+      diag("Llamada a Office.onReady() completada sin lanzar excepcion sincrona.");
+    } catch (outerErr) {
+      diag("!!! Excepcion al LLAMAR Office.onReady: " + outerErr.message);
+    }
+  </script>
+
+</body>
+</html>
