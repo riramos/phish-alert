@@ -15,10 +15,10 @@
   <Description DefaultValue="Reporta correos sospechosos o de phishing al equipo de Ciberseguridad de Canvia."/>
 
   <!-- Iconos del botón (usar PNG 16x16, 32x32, 80x80) -->
-  <IconUrl DefaultValue="https://riramos.github.io/canvia-phish-alert/assets/icon-80.png"/>
-  <HighResolutionIconUrl DefaultValue="https://riramos.github.io/canvia-phish-alert/assets/icon-80.png"/>
+  <IconUrl DefaultValue="https://riramos.github.io/phish-alert/assets/icon-80.png"/>
+  <HighResolutionIconUrl DefaultValue="https://riramos.github.io/phish-alert/assets/icon-80.png"/>
 
-  <SupportUrl DefaultValue="https://riramos.github.io/canvia-phish-alert/"/>
+  <SupportUrl DefaultValue="https://riramos.github.io/phish-alert/"/>
 
   <!-- Dominios permitidos -->
   <AppDomains>
@@ -42,7 +42,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://riramos.github.io/canvia-phish-alert/"/>
+        <SourceLocation DefaultValue="https://riramos.github.io/phish-alert/"/>
         <RequestedHeight>350</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -107,17 +107,17 @@
     <Resources>
       <bt:Images>
         <bt:Image id="icon16"
-          DefaultValue="https://riramos.github.io/canvia-phish-alert/assets/icon-16.png"/>
+          DefaultValue="https://riramos.github.io/phish-alert/assets/icon-16.png"/>
         <bt:Image id="icon32"
-          DefaultValue="https://riramos.github.io/canvia-phish-alert/assets/icon-32.png"/>
+          DefaultValue="https://riramos.github.io/phish-alert/assets/icon-32.png"/>
         <bt:Image id="icon80"
-          DefaultValue="https://riramos.github.io/canvia-phish-alert/assets/icon-80.png"/>
+          DefaultValue="https://riramos.github.io/phish-alert/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
         <bt:Url id="functionFile"
-          DefaultValue="https://riramos.github.io/canvia-phish-alert/"/>
+          DefaultValue="https://riramos.github.io/phish-alert/"/>
         <bt:Url id="taskpaneUrl"
-          DefaultValue="https://riramos.github.io/canvia-phish-alert/"/>
+          DefaultValue="https://riramos.github.io/phish-alert/"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="groupLabel" DefaultValue="Ciberseguridad"/>
