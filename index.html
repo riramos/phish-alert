@@ -247,10 +247,22 @@
 
     showLoading();
 
-    // En modo Read, internetMessageId tambien es un string sincrono,
-    // no un objeto con getAsync.
-    var messageId = currentItem.internetMessageId;
-    if (!messageId) {
+    // La API de threat submission necesita una URL de Graph al mensaje,
+    // no el internetMessageId. convertToRestId nos da el ID compatible
+    // con Microsoft Graph (v2.0 = formato Graph v1.0/beta).
+    var restId;
+    try {
+      restId = Office.context.mailbox.convertToRestId(
+        currentItem.itemId,
+        Office.MailboxEnums.RestVersion.v2_0
+      );
+    } catch (convErr) {
+      showForm();
+      showError("No se pudo generar el identificador del mensaje: " + convErr.message);
+      return;
+    }
+
+    if (!restId) {
       showForm();
       showError("No se pudo obtener el ID del mensaje.");
       return;
@@ -260,7 +272,7 @@
 
     var payload = {
       recipientEmailAddress: recipient,
-      messageId: messageId,
+      messageRestId: restId,
       category: category,
       comment: commentText
     };
