@@ -4,8 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Canvia Phish Alert</title>
-  <script src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
-  <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+  <!--
+    IMPORTANTE: usar el alias de version mayor (sin pin a "1.1"),
+    que siempre sirve el office.js correcto para el host/version del cliente,
+    incluyendo Office.onReady().
+  -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -25,251 +29,92 @@
       gap: 10px;
     }
 
-    .header-icon {
-      font-size: 22px;
-    }
+    .header-icon { font-size: 22px; }
+    .header-text h1 { font-size: 15px; font-weight: 700; letter-spacing: 0.3px; }
+    .header-text p { font-size: 11px; opacity: 0.8; margin-top: 1px; }
 
-    .header-text h1 {
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    }
+    .orange-bar { height: 4px; background: #FF5800; }
 
-    .header-text p {
-      font-size: 11px;
-      opacity: 0.8;
-      margin-top: 1px;
-    }
-
-    .orange-bar {
-      height: 4px;
-      background: #FF5800;
-    }
-
-    .container {
-      padding: 16px;
-    }
+    .container { padding: 16px; }
 
     .question {
-      font-size: 13px;
-      font-weight: 600;
-      color: #005293;
-      margin-bottom: 12px;
+      font-size: 13px; font-weight: 600; color: #005293; margin-bottom: 12px;
     }
 
     .email-info {
-      background: white;
-      border: 1px solid #dde4ee;
-      border-radius: 6px;
-      padding: 12px;
-      margin-bottom: 16px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      background: white; border: 1px solid #dde4ee; border-radius: 6px;
+      padding: 12px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
 
-    .email-info-row {
-      display: flex;
-      font-size: 12px;
-      margin-bottom: 6px;
-    }
+    .email-info-row { display: flex; font-size: 12px; margin-bottom: 6px; }
+    .email-info-row:last-child { margin-bottom: 0; }
+    .email-label { font-weight: 600; color: #8096b0; width: 55px; flex-shrink: 0; }
+    .email-value { color: #1a2b3c; word-break: break-all; }
 
-    .email-info-row:last-child {
-      margin-bottom: 0;
-    }
+    .section-label { font-size: 12px; font-weight: 600; color: #1a2b3c; margin-bottom: 8px; }
 
-    .email-label {
-      font-weight: 600;
-      color: #8096b0;
-      width: 55px;
-      flex-shrink: 0;
-    }
-
-    .email-value {
-      color: #1a2b3c;
-      word-break: break-all;
-    }
-
-    .section-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #1a2b3c;
-      margin-bottom: 8px;
-    }
-
-    .radio-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
+    .radio-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 
     .radio-option {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      background: white;
-      border: 1px solid #dde4ee;
-      border-radius: 6px;
-      padding: 10px 12px;
-      cursor: pointer;
-      transition: border-color 0.15s;
+      display: flex; align-items: flex-start; gap: 8px; background: white;
+      border: 1px solid #dde4ee; border-radius: 6px; padding: 10px 12px;
+      cursor: pointer; transition: border-color 0.15s;
     }
+    .radio-option:hover { border-color: #005293; }
+    .radio-option input[type="radio"] { margin-top: 2px; accent-color: #005293; flex-shrink: 0; }
+    .radio-option.selected { border-color: #005293; background: #f0f5fb; }
+    .radio-text strong { font-size: 12px; color: #1a2b3c; display: block; }
+    .radio-text span { font-size: 11px; color: #8096b0; }
 
-    .radio-option:hover {
-      border-color: #005293;
-    }
-
-    .radio-option input[type="radio"] {
-      margin-top: 2px;
-      accent-color: #005293;
-      flex-shrink: 0;
-    }
-
-    .radio-option.selected {
-      border-color: #005293;
-      background: #f0f5fb;
-    }
-
-    .radio-text strong {
-      font-size: 12px;
-      color: #1a2b3c;
-      display: block;
-    }
-
-    .radio-text span {
-      font-size: 11px;
-      color: #8096b0;
-    }
-
-    .comment-section {
-      margin-bottom: 16px;
-    }
-
+    .comment-section { margin-bottom: 16px; }
     .comment-section textarea {
-      width: 100%;
-      height: 70px;
-      border: 1px solid #dde4ee;
-      border-radius: 6px;
-      padding: 8px 10px;
-      font-size: 12px;
-      font-family: inherit;
-      resize: none;
-      color: #1a2b3c;
-      background: white;
+      width: 100%; height: 70px; border: 1px solid #dde4ee; border-radius: 6px;
+      padding: 8px 10px; font-size: 12px; font-family: inherit; resize: none;
+      color: #1a2b3c; background: white;
     }
-
-    .comment-section textarea:focus {
-      outline: none;
-      border-color: #005293;
-    }
-
-    .char-count {
-      text-align: right;
-      font-size: 10px;
-      color: #8096b0;
-      margin-top: 3px;
-    }
+    .comment-section textarea:focus { outline: none; border-color: #005293; }
+    .char-count { text-align: right; font-size: 10px; color: #8096b0; margin-top: 3px; }
 
     .btn-report {
-      width: 100%;
-      background: #005293;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 12px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 0.3px;
-      transition: background 0.15s;
+      width: 100%; background: #005293; color: white; border: none; border-radius: 6px;
+      padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer;
+      letter-spacing: 0.3px; transition: background 0.15s;
     }
+    .btn-report:hover { background: #003d70; }
+    .btn-report:disabled { background: #8096b0; cursor: not-allowed; }
 
-    .btn-report:hover {
-      background: #003d70;
-    }
+    .success-state { display: none; text-align: center; padding: 30px 16px; }
+    .success-icon { font-size: 48px; margin-bottom: 12px; }
+    .success-title { font-size: 16px; font-weight: 700; color: #005293; margin-bottom: 8px; }
+    .success-msg { font-size: 12px; color: #8096b0; line-height: 1.5; }
 
-    .btn-report:disabled {
-      background: #8096b0;
-      cursor: not-allowed;
-    }
-
-    /* SUCCESS STATE */
-    .success-state {
-      display: none;
-      text-align: center;
-      padding: 30px 16px;
-    }
-
-    .success-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-    }
-
-    .success-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #005293;
-      margin-bottom: 8px;
-    }
-
-    .success-msg {
-      font-size: 12px;
-      color: #8096b0;
-      line-height: 1.5;
-    }
-
-    /* ERROR STATE */
     .error-banner {
-      display: none;
-      background: #fff0f0;
-      border: 1px solid #ffcccc;
-      border-radius: 6px;
-      padding: 10px 12px;
-      font-size: 12px;
-      color: #8b0000;
-      margin-bottom: 12px;
+      display: none; background: #fff0f0; border: 1px solid #ffcccc; border-radius: 6px;
+      padding: 10px 12px; font-size: 12px; color: #8b0000; margin-bottom: 12px;
     }
 
-    /* LOADING */
-    .loading-state {
-      display: none;
-      text-align: center;
-      padding: 40px 16px;
-    }
-
+    .loading-state { display: none; text-align: center; padding: 40px 16px; }
     .spinner {
-      width: 36px;
-      height: 36px;
-      border: 4px solid #dde4ee;
-      border-top: 4px solid #005293;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 14px;
+      width: 36px; height: 36px; border: 4px solid #dde4ee; border-top: 4px solid #005293;
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px;
     }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .loading-text {
-      font-size: 13px;
-      color: #8096b0;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 13px; color: #8096b0; }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="header-icon">🛡️</div>
+  <div class="header-icon">&#128737;&#65039;</div>
   <div class="header-text">
     <h1>Reportar Phishing</h1>
   </div>
 </div>
 <div class="orange-bar"></div>
 
-<!-- MAIN FORM -->
 <div id="mainForm" class="container">
 
-  <p class="question">¿Deseas reportar este correo como phishing o sospechoso?</p>
+  <p class="question">&#191;Deseas reportar este correo como phishing o sospechoso?</p>
 
   <div class="email-info">
     <div class="email-info-row">
@@ -282,13 +127,13 @@
     </div>
   </div>
 
-  <p class="section-label">Clasificación del correo:</p>
+  <p class="section-label">Clasificaci&#243;n del correo:</p>
   <div class="radio-group">
     <label class="radio-option selected" id="opt-phish">
       <input type="radio" name="category" value="phish" checked />
       <div class="radio-text">
         <strong>Phishing o sospechoso</strong>
-        <span>Creo que este correo es un intento de engaño.</span>
+        <span>Creo que este correo es un intento de enga&#241;o.</span>
       </div>
     </label>
     <label class="radio-option" id="opt-junk">
@@ -302,7 +147,7 @@
 
   <div class="comment-section">
     <p class="section-label">Comentario (opcional):</p>
-    <textarea id="comment" placeholder="Describe brevemente por qué consideras que este correo es sospechoso..." maxlength="360" oninput="updateCharCount()"></textarea>
+    <textarea id="comment" placeholder="Describe brevemente por qu&#233; consideras que este correo es sospechoso..." maxlength="360" oninput="updateCharCount()"></textarea>
     <div class="char-count"><span id="charCount">0</span>/360</div>
   </div>
 
@@ -314,68 +159,53 @@
 
 </div>
 
-<!-- LOADING STATE -->
 <div id="loadingState" class="loading-state">
   <div class="spinner"></div>
   <p class="loading-text">Enviando reporte...</p>
 </div>
 
-<!-- SUCCESS STATE -->
 <div id="successState" class="success-state">
-  <div class="success-icon">✅</div>
-  <p class="success-title">¡Reporte enviado!</p>
+  <div class="success-icon">&#9989;</div>
+  <p class="success-title">&#161;Reporte enviado!</p>
   <p class="success-msg">
     Gracias por reportar este correo.<br/>
-    Nuestro equipo de seguridad lo revisará.<br/><br/>
-    Tu acción ayuda a proteger a Canvia.
+    Nuestro equipo de seguridad lo revisar&#225;.<br/><br/>
+    Tu acci&#243;n ayuda a proteger a Canvia.
   </p>
 </div>
 
 <script>
-  // ── CONFIGURACIÓN ──────────────────────────────────────────────────────────
-  const CLIENT_ID = "97cd7707-188b-4393-b817-4687f0f08e7b";
-  const TENANT_ID = "c9e01828-e274-433d-b564-feacdabc0148";
-  const AUTHORITY = `https://login.microsoftonline.com/${TENANT_ID}`;
-  const REDIRECT_URI = "https://riramos.github.io/phish-alert/";
+  // ── CONFIGURACION ──────────────────────────────────────────────────────
+  // URL de tu Azure Function (HTTP trigger). Sustituye por la URL real
+  // desplegada, incluyendo el "?code=" con la function key si usas
+  // authLevel "function".
+  var REPORT_ENDPOINT = "https://REEMPLAZAR-tu-function-app.azurewebsites.net/api/reportPhish?code=REEMPLAZAR_FUNCTION_KEY";
 
-  const SCOPES = [
-    "https://graph.microsoft.com/Mail.Read",
-    "https://graph.microsoft.com/Mail.ReadWrite",
-    "https://graph.microsoft.com/User.Read"
-  ];
+  var currentItem = null;
 
-  // ── MSAL CONFIG ────────────────────────────────────────────────────────────
-  const msalConfig = {
-    auth: {
-      clientId: CLIENT_ID,
-      authority: AUTHORITY,
-      redirectUri: REDIRECT_URI,
-    },
-    cache: {
-      cacheLocation: "sessionStorage",
-      storeAuthStateInCookie: false,
+  // ── ESTILO DE RADIOS (ES5, sin arrow functions) ────────────────────────
+  (function attachRadioListeners() {
+    var radios = document.querySelectorAll('input[name="category"]');
+    for (var i = 0; i < radios.length; i++) {
+      radios[i].addEventListener('change', function (e) {
+        var options = document.querySelectorAll('.radio-option');
+        for (var j = 0; j < options.length; j++) {
+          options[j].className = options[j].className.replace(' selected', '');
+        }
+        var parentLabel = e.target.parentNode;
+        parentLabel.className = parentLabel.className + ' selected';
+      });
     }
-  };
+  })();
 
-  const msalInstance = new msal.PublicClientApplication(msalConfig);
-  let currentItem = null;
-
-  // ── RADIO STYLES ──────────────────────────────────────────────────────────
-  document.querySelectorAll('input[name="category"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
-      radio.closest('.radio-option').classList.add('selected');
-    });
-  });
-
-  // ── CHAR COUNT ────────────────────────────────────────────────────────────
+  // ── CONTADOR DE CARACTERES ─────────────────────────────────────────────
   function updateCharCount() {
     document.getElementById('charCount').textContent =
       document.getElementById('comment').value.length;
   }
 
-  // ── OFFICE INIT ───────────────────────────────────────────────────────────
-  Office.onReady(info => {
+  // ── INIT DE OFFICE ──────────────────────────────────────────────────────
+  Office.onReady(function (info) {
     if (info.host === Office.HostType.Outlook) {
       currentItem = Office.context.mailbox.item;
       loadEmailInfo();
@@ -383,54 +213,29 @@
   });
 
   function loadEmailInfo() {
-    if (!currentItem) return;
+    if (!currentItem) { return; }
 
-    // Subject
-    currentItem.subject.getAsync(result => {
-      const subj = result.status === Office.AsyncResultStatus.Succeeded
+    currentItem.subject.getAsync(function (result) {
+      var subj = (result.status === Office.AsyncResultStatus.Succeeded)
         ? result.value
         : "(Sin asunto)";
-      const truncated = subj.length > 60 ? subj.substring(0, 57) + "..." : subj;
+      var truncated = (subj.length > 60) ? (subj.substring(0, 57) + "...") : subj;
       document.getElementById('subjectDisplay').textContent = truncated;
     });
 
-    // Sender
-    const sender = currentItem.from;
+    var sender = currentItem.from;
     if (sender && sender.emailAddress) {
-      document.getElementById('senderDisplay').textContent =
-        sender.displayName
-          ? `${sender.displayName} <${sender.emailAddress}>`
-          : sender.emailAddress;
+      document.getElementById('senderDisplay').textContent = sender.displayName
+        ? (sender.displayName + " <" + sender.emailAddress + ">")
+        : sender.emailAddress;
     } else {
       document.getElementById('senderDisplay').textContent = "(Remitente desconocido)";
     }
   }
 
-  // ── GET ACCESS TOKEN ──────────────────────────────────────────────────────
-  async function getAccessToken() {
-    await msalInstance.initialize();
-
-    const accounts = msalInstance.getAllAccounts();
-    if (accounts.length > 0) {
-      try {
-        const result = await msalInstance.acquireTokenSilent({
-          scopes: SCOPES,
-          account: accounts[0]
-        });
-        return result.accessToken;
-      } catch (e) {
-        // Silent failed, try popup
-      }
-    }
-
-    const result = await msalInstance.acquireTokenPopup({ scopes: SCOPES });
-    return result.accessToken;
-  }
-
-  // ── REPORT EMAIL ──────────────────────────────────────────────────────────
-  async function reportEmail() {
-    const btn = document.getElementById('btnReport');
-    const errorBanner = document.getElementById('errorBanner');
+  // ── REPORTE (XHR, sin fetch/async/await para compatibilidad IE11) ────
+  function reportEmail() {
+    var errorBanner = document.getElementById('errorBanner');
     errorBanner.style.display = 'none';
 
     if (!currentItem) {
@@ -438,80 +243,61 @@
       return;
     }
 
-    // Get selected category
-    const category = document.querySelector('input[name="category"]:checked').value;
-    const reportType = category === "phish" ? "phish" : "junk";
+    var checkedRadio = document.querySelector('input[name="category"]:checked');
+    var category = checkedRadio ? checkedRadio.value : "phish";
+    var commentText = document.getElementById('comment').value;
 
-    // Show loading
     showLoading();
 
-    try {
-      // Get access token
-      const token = await getAccessToken();
+    currentItem.internetMessageId.getAsync(function (idResult) {
+      if (idResult.status !== Office.AsyncResultStatus.Succeeded) {
+        showForm();
+        showError("No se pudo obtener el ID del mensaje.");
+        return;
+      }
 
-      // Get internet message ID
-      const messageId = await new Promise((resolve, reject) => {
-        currentItem.internetMessageId.getAsync(result => {
-          if (result.status === Office.AsyncResultStatus.Succeeded) {
-            resolve(result.value);
+      var messageId = idResult.value;
+      var recipient = Office.context.mailbox.userProfile.emailAddress;
+
+      var payload = {
+        recipientEmailAddress: recipient,
+        messageId: messageId,
+        category: category,
+        comment: commentText
+      };
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", REPORT_ENDPOINT, true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            showSuccess();
           } else {
-            reject(new Error("No se pudo obtener el ID del mensaje"));
+            showForm();
+            var msg = "Error HTTP " + xhr.status;
+            try {
+              var parsed = JSON.parse(xhr.responseText);
+              if (parsed && parsed.error) { msg = parsed.error; }
+            } catch (parseErr) {
+              // ignorar, usar msg por defecto
+            }
+            showError("Error al enviar el reporte: " + msg);
           }
-        });
-      });
-
-      // Get subject for logging
-      const subject = await new Promise((resolve) => {
-        currentItem.subject.getAsync(result => {
-          resolve(result.status === Office.AsyncResultStatus.Succeeded
-            ? result.value : "");
-        });
-      });
-
-      // Call Microsoft Graph Security Reports API
-      // This generates the RecordType 29 / UserSubmission event in the audit log
-      const response = await fetch(
-        "https://graph.microsoft.com/v1.0/security/threatSubmission/emailThreats",
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            "@odata.type": `#microsoft.graph.security.email${capitalize(reportType)}Submission`,
-            "recipientEmailAddress": Office.context.mailbox.userProfile.emailAddress,
-            "messageId": messageId
-          })
         }
-      );
+      };
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `Error HTTP ${response.status}`);
-      }
+      xhr.onerror = function () {
+        showForm();
+        showError("No se pudo conectar con el servicio de reporte. Verifica tu conexi\u00f3n.");
+      };
 
-      // Success
-      showSuccess();
-
-    } catch (err) {
-      showForm();
-      if (err.message.includes("popup_window_error") ||
-          err.message.includes("user_cancelled")) {
-        showError("Se canceló la autenticación. Por favor intenta nuevamente.");
-      } else if (err.message.includes("AADSTS")) {
-        showError("Error de autenticación. Contacta al equipo de TI.");
-      } else {
-        showError(`Error al enviar el reporte: ${err.message}`);
-      }
-    }
+      xhr.send(JSON.stringify(payload));
+    });
   }
 
-  // ── UI HELPERS ────────────────────────────────────────────────────────────
-  function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
+  // ── UI HELPERS ────────────────────────────────────────────────────────
   function showLoading() {
     document.getElementById('mainForm').style.display = 'none';
     document.getElementById('successState').style.display = 'none';
@@ -531,7 +317,7 @@
   }
 
   function showError(msg) {
-    const banner = document.getElementById('errorBanner');
+    var banner = document.getElementById('errorBanner');
     banner.textContent = msg;
     banner.style.display = 'block';
   }
