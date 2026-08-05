@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
+  xsi:type="MessageReadApp">
+
+  <!-- ID único del add-in - NO CAMBIAR -->
+  <Id>a1b2c3d4-e5f6-7890-abcd-canviaphish01</Id>
+  <Version>1.0.0</Version>
+  <ProviderName>Canvia Ciberseguridad</ProviderName>
+  <DefaultLocale>es-PE</DefaultLocale>
+  <DisplayName DefaultValue="Reportar Phishing"/>
+  <Description DefaultValue="Reporta correos sospechosos o de phishing al equipo de Ciberseguridad de Canvia."/>
+
+  <!-- Iconos del botón (usar PNG 16x16, 32x32, 80x80) -->
+  <IconUrl DefaultValue="https://riramos.github.io/canvia-phish-alert/assets/icon-80.png"/>
+  <HighResolutionIconUrl DefaultValue="https://riramos.github.io/canvia-phish-alert/assets/icon-80.png"/>
+
+  <SupportUrl DefaultValue="https://riramos.github.io/canvia-phish-alert/"/>
+
+  <!-- Dominios permitidos -->
+  <AppDomains>
+    <AppDomain>https://login.microsoftonline.com</AppDomain>
+    <AppDomain>https://graph.microsoft.com</AppDomain>
+    <AppDomain>https://alcdn.msauth.net</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Mailbox"/>
+  </Hosts>
+
+  <!-- Requirement set 1.1 = compatible con Outlook 2016/2019 -->
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.1"/>
+    </Sets>
+  </Requirements>
+
+  <!-- Formulario de lectura de correo -->
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://riramos.github.io/canvia-phish-alert/"/>
+        <RequestedHeight>350</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
+  <!-- Permisos necesarios -->
+  <Permissions>ReadItem</Permissions>
+
+  <!-- Regla: mostrar solo al leer un mensaje -->
+  <Rule xsi:type="RuleCollection" Mode="And">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+  </Rule>
+
+  <DisableEntityHighlighting>false</DisableEntityHighlighting>
+
+  <!-- Override para versiones modernas con botón en ribbon -->
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Requirements>
+      <bt:Sets DefaultMinVersion="1.3">
+        <bt:Set Name="Mailbox"/>
+      </bt:Sets>
+    </Requirements>
+
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+
+          <!-- Función de comando (requerida) -->
+          <FunctionFile resid="functionFile"/>
+
+          <!-- Extensión punto: lectura de mensaje -->
+          <ExtensionPoint xsi:type="MessageReadCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="canviaGroup">
+                <Label resid="groupLabel"/>
+
+                <!-- Botón principal -->
+                <Control xsi:type="Button" id="canviaReportButton">
+                  <Label resid="btnLabel"/>
+                  <Supertip>
+                    <Title resid="btnLabel"/>
+                    <Description resid="btnTooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="icon16"/>
+                    <bt:Image size="32" resid="icon32"/>
+                    <bt:Image size="80" resid="icon80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="taskpaneUrl"/>
+                    <SupportsPinning>true</SupportsPinning>
+                  </Action>
+                </Control>
+
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="icon16"
+          DefaultValue="https://riramos.github.io/canvia-phish-alert/assets/icon-16.png"/>
+        <bt:Image id="icon32"
+          DefaultValue="https://riramos.github.io/canvia-phish-alert/assets/icon-32.png"/>
+        <bt:Image id="icon80"
+          DefaultValue="https://riramos.github.io/canvia-phish-alert/assets/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="functionFile"
+          DefaultValue="https://riramos.github.io/canvia-phish-alert/"/>
+        <bt:Url id="taskpaneUrl"
+          DefaultValue="https://riramos.github.io/canvia-phish-alert/"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="groupLabel" DefaultValue="Ciberseguridad"/>
+        <bt:String id="btnLabel"   DefaultValue="Reportar Phishing"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="btnTooltip"
+          DefaultValue="Reporta este correo como phishing o sospechoso al equipo de Ciberseguridad de Canvia."/>
+      </bt:LongStrings>
+    </Resources>
+
+  </VersionOverrides>
+</OfficeApp>
