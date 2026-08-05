@@ -179,7 +179,7 @@
   // URL de tu Azure Function (HTTP trigger). Sustituye por la URL real
   // desplegada, incluyendo el "?code=" con la function key si usas
   // authLevel "function".
-  var REPORT_ENDPOINT = "https://phish-alert-gga6egb3a3hkhwcj.eastus2-01.azurewebsites.net/api/reportphish?code=b6TReKrMb4dJaxuJfbq8BOk4czeE41S8u21Hrzvzx1xLAzFuTtDjqQ==";
+  var REPORT_ENDPOINT = "https://REEMPLAZAR-tu-function-app.azurewebsites.net/api/reportPhish?code=REEMPLAZAR_FUNCTION_KEY";
 
   var currentItem = null;
 
@@ -215,13 +215,11 @@
   function loadEmailInfo() {
     if (!currentItem) { return; }
 
-    currentItem.subject.getAsync(function (result) {
-      var subj = (result.status === Office.AsyncResultStatus.Succeeded)
-        ? result.value
-        : "(Sin asunto)";
-      var truncated = (subj.length > 60) ? (subj.substring(0, 57) + "...") : subj;
-      document.getElementById('subjectDisplay').textContent = truncated;
-    });
+    // En modo Read (ItemRead), 'subject' es un string sincrono, NO un
+    // objeto con getAsync (eso solo aplica en modo Compose).
+    var subj = currentItem.subject || "(Sin asunto)";
+    var truncated = (subj.length > 60) ? (subj.substring(0, 57) + "...") : subj;
+    document.getElementById('subjectDisplay').textContent = truncated;
 
     var sender = currentItem.from;
     if (sender && sender.emailAddress) {
@@ -249,52 +247,52 @@
 
     showLoading();
 
-    currentItem.internetMessageId.getAsync(function (idResult) {
-      if (idResult.status !== Office.AsyncResultStatus.Succeeded) {
-        showForm();
-        showError("No se pudo obtener el ID del mensaje.");
-        return;
-      }
+    // En modo Read, internetMessageId tambien es un string sincrono,
+    // no un objeto con getAsync.
+    var messageId = currentItem.internetMessageId;
+    if (!messageId) {
+      showForm();
+      showError("No se pudo obtener el ID del mensaje.");
+      return;
+    }
 
-      var messageId = idResult.value;
-      var recipient = Office.context.mailbox.userProfile.emailAddress;
+    var recipient = Office.context.mailbox.userProfile.emailAddress;
 
-      var payload = {
-        recipientEmailAddress: recipient,
-        messageId: messageId,
-        category: category,
-        comment: commentText
-      };
+    var payload = {
+      recipientEmailAddress: recipient,
+      messageId: messageId,
+      category: category,
+      comment: commentText
+    };
 
-      var xhr = new XMLHttpRequest();
-      xhr.open("POST", REPORT_ENDPOINT, true);
-      xhr.setRequestHeader("Content-Type", "application/json");
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", REPORT_ENDPOINT, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
 
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            showSuccess();
-          } else {
-            showForm();
-            var msg = "Error HTTP " + xhr.status;
-            try {
-              var parsed = JSON.parse(xhr.responseText);
-              if (parsed && parsed.error) { msg = parsed.error; }
-            } catch (parseErr) {
-              // ignorar, usar msg por defecto
-            }
-            showError("Error al enviar el reporte: " + msg);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          showSuccess();
+        } else {
+          showForm();
+          var msg = "Error HTTP " + xhr.status;
+          try {
+            var parsed = JSON.parse(xhr.responseText);
+            if (parsed && parsed.error) { msg = parsed.error; }
+          } catch (parseErr) {
+            // ignorar, usar msg por defecto
           }
+          showError("Error al enviar el reporte: " + msg);
         }
-      };
+      }
+    };
 
-      xhr.onerror = function () {
-        showForm();
-        showError("No se pudo conectar con el servicio de reporte. Verifica tu conexi\u00f3n.");
-      };
+    xhr.onerror = function () {
+      showForm();
+      showError("No se pudo conectar con el servicio de reporte. Verifica tu conexi\u00f3n.");
+    };
 
-      xhr.send(JSON.stringify(payload));
-    });
+    xhr.send(JSON.stringify(payload));
   }
 
   // ── UI HELPERS ────────────────────────────────────────────────────────
