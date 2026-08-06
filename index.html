@@ -369,7 +369,8 @@
       var warningEl = document.getElementById('successWarning');
       if (!results.ews.ok) {
         warningEl.textContent = "No se pudo adjuntar una copia del correo para el equipo de seguridad. " +
-          "Por favor reenv\u00edalo manualmente a " + SOC_REPORT_MAILBOX + ".";
+          "Por favor reenv\u00edalo manualmente a " + SOC_REPORT_MAILBOX + ". " +
+          "[DEBUG: " + (results.ews.error || "sin detalle") + "]";
         warningEl.style.display = 'block';
       } else {
         warningEl.style.display = 'none';
