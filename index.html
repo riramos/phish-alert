@@ -172,6 +172,7 @@
     Nuestro equipo de seguridad lo revisar&#225;.<br/><br/>
     Tu acci&#243;n ayuda a proteger a Canvia.
   </p>
+  <p id="successWarning" style="display:none; color:#8b0000; font-size:11px; margin-top:10px; line-height:1.4;"></p>
 </div>
 
 <script>
@@ -180,6 +181,11 @@
   // desplegada, incluyendo el "?code=" con la function key si usas
   // authLevel "function".
   var REPORT_ENDPOINT = "https://phish-alert-gga6egb3a3hkhwcj.eastus2-01.azurewebsites.net/api/reportphish?code=b6TReKrMb4dJaxuJfbq8BOk4czeE41S8u21Hrzvzx1xLAzFuTtDjqQ==";
+
+  // Buzon de reporte del SOC donde debe llegar el .eml del correo
+  // reportado, para que el analista pueda investigarlo (headers, cuerpo,
+  // adjuntos, URLs). Ajusta a la direccion real configurada.
+  var SOC_REPORT_MAILBOX = "ricardo@ricardoramos.pe";
 
   var currentItem = null;
 
@@ -231,7 +237,80 @@
     }
   }
 
-  // ── REPORTE (XHR, sin fetch/async/await para compatibilidad IE11) ────
+  // ── UTIL: escapar texto para insertar en XML (EWS es SOAP/XML) ───────
+  function escapeXml(str) {
+    if (!str) { return ""; }
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
+  }
+
+  // ── EWS: reenviar el correo reportado (como adjunto .eml) al buzon
+  // del SOC, usando la identidad del propio usuario (no la de la app).
+  // makeEwsRequestAsync es callback-based (ES5), compatible con Trident.
+  function buildEwsForwardRequest(itemId, subject, category, commentText, reporterEmail) {
+    var catLabel = (category === "phish") ? "Phishing o sospechoso" : "Spam o correo no deseado";
+    var bodyText =
+      "Correo reportado por: " + reporterEmail + "\n" +
+      "Clasificacion: " + catLabel + "\n" +
+      "Comentario del usuario: " + (commentText || "(sin comentario)") + "\n\n" +
+      "Se adjunta el correo original (.eml) para analisis.";
+
+    return (
+      '<?xml version="1.0" encoding="utf-8"?>' +
+      '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" ' +
+      'xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types" ' +
+      'xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages">' +
+      '<soap:Header><t:RequestServerVersion Version="Exchange2013" /></soap:Header>' +
+      '<soap:Body>' +
+      '<m:CreateItem MessageDisposition="SendAndSaveCopy">' +
+      '<m:SavedItemFolderId><t:DistinguishedFolderId Id="sentitems" /></m:SavedItemFolderId>' +
+      '<m:Items>' +
+      '<t:Message>' +
+      '<t:Subject>' + escapeXml("[Phishing reportado] " + subject) + '</t:Subject>' +
+      '<t:Body BodyType="Text">' + escapeXml(bodyText) + '</t:Body>' +
+      '<t:ToRecipients><t:Mailbox><t:EmailAddress>' + escapeXml(SOC_REPORT_MAILBOX) + '</t:EmailAddress></t:Mailbox></t:ToRecipients>' +
+      '<t:Attachments>' +
+      '<t:ItemAttachment>' +
+      '<t:Name>correo_reportado.eml</t:Name>' +
+      '<t:ItemId Id="' + escapeXml(itemId) + '" />' +
+      '</t:ItemAttachment>' +
+      '</t:Attachments>' +
+      '</t:Message>' +
+      '</m:Items>' +
+      '</m:CreateItem>' +
+      '</soap:Body>' +
+      '</soap:Envelope>'
+    );
+  }
+
+  function sendEwsForward(subject, category, commentText, reporterEmail, callback) {
+    var ewsXml = buildEwsForwardRequest(currentItem.itemId, subject, category, commentText, reporterEmail);
+
+    Office.context.mailbox.makeEwsRequestAsync(ewsXml, function (asyncResult) {
+      if (asyncResult.status !== Office.AsyncResultStatus.Succeeded) {
+        callback({ ok: false, error: (asyncResult.error && asyncResult.error.message) || "Error desconocido en EWS" });
+        return;
+      }
+      // Revisar si la respuesta SOAP trae un ResponseCode distinto de
+      // NoError (EWS devuelve 200 aunque la operacion en si haya fallado).
+      var xml = asyncResult.value;
+      if (xml && xml.indexOf("ResponseClass=\"Error\"") !== -1) {
+        callback({ ok: false, error: "EWS devolvio un error al crear/enviar el item" });
+        return;
+      }
+      callback({ ok: true });
+    });
+  }
+
+  // ── REPORTE: dispara en paralelo (1) la sumision a Graph via la
+  // Function (genera la alerta/telemetria) y (2) el reenvio EWS del
+  // .eml al buzon del SOC (da la evidencia para investigar). Ambos son
+  // async independientes basados en callbacks, sin Promise/fetch, para
+  // mantener compatibilidad con Trident/IE11 en Outlook 2019 de escritorio.
   function reportEmail() {
     var errorBanner = document.getElementById('errorBanner');
     errorBanner.style.display = 'none';
@@ -244,12 +323,10 @@
     var checkedRadio = document.querySelector('input[name="category"]:checked');
     var category = checkedRadio ? checkedRadio.value : "phish";
     var commentText = document.getElementById('comment').value;
+    var subject = currentItem.subject || "(Sin asunto)";
 
     showLoading();
 
-    // La API de threat submission necesita una URL de Graph al mensaje,
-    // no el internetMessageId. convertToRestId nos da el ID compatible
-    // con Microsoft Graph (v2.0 = formato Graph v1.0/beta).
     var restId;
     try {
       restId = Office.context.mailbox.convertToRestId(
@@ -277,6 +354,29 @@
       comment: commentText
     };
 
+    var results = { graph: null, ews: null };
+
+    function finish() {
+      if (results.graph === null || results.ews === null) { return; }
+
+      if (!results.graph.ok) {
+        showForm();
+        showError("Error al enviar el reporte: " + results.graph.error);
+        return;
+      }
+
+      showSuccess();
+      var warningEl = document.getElementById('successWarning');
+      if (!results.ews.ok) {
+        warningEl.textContent = "No se pudo adjuntar una copia del correo para el equipo de seguridad. " +
+          "Por favor reenv\u00edalo manualmente a " + SOC_REPORT_MAILBOX + ".";
+        warningEl.style.display = 'block';
+      } else {
+        warningEl.style.display = 'none';
+      }
+    }
+
+    // (1) Sumision a Graph (alerta/telemetria para Splunk)
     var xhr = new XMLHttpRequest();
     xhr.open("POST", REPORT_ENDPOINT, true);
     xhr.setRequestHeader("Content-Type", "application/json");
@@ -284,9 +384,8 @@
     xhr.onreadystatechange = function () {
       if (xhr.readyState === 4) {
         if (xhr.status >= 200 && xhr.status < 300) {
-          showSuccess();
+          results.graph = { ok: true };
         } else {
-          showForm();
           var msg = "Error HTTP " + xhr.status;
           try {
             var parsed = JSON.parse(xhr.responseText);
@@ -294,17 +393,24 @@
           } catch (parseErr) {
             // ignorar, usar msg por defecto
           }
-          showError("Error al enviar el reporte: " + msg);
+          results.graph = { ok: false, error: msg };
         }
+        finish();
       }
     };
 
     xhr.onerror = function () {
-      showForm();
-      showError("No se pudo conectar con el servicio de reporte. Verifica tu conexi\u00f3n.");
+      results.graph = { ok: false, error: "No se pudo conectar con el servicio de reporte. Verifica tu conexi\u00f3n." };
+      finish();
     };
 
     xhr.send(JSON.stringify(payload));
+
+    // (2) Reenvio EWS del .eml al buzon del SOC (evidencia para el analista)
+    sendEwsForward(subject, category, commentText, recipient, function (ewsResult) {
+      results.ews = ewsResult;
+      finish();
+    });
   }
 
   // ── UI HELPERS ────────────────────────────────────────────────────────

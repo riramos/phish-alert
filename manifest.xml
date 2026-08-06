@@ -19,7 +19,6 @@
   <AppDomains>
     <AppDomain>https://login.microsoftonline.com</AppDomain>
     <AppDomain>https://graph.microsoft.com</AppDomain>
-    <AppDomain>https://alcdn.msauth.net</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -41,7 +40,12 @@
     </Form>
   </FormSettings>
 
-  <Permissions>ReadItem</Permissions>
+  <!--
+    IMPORTANTE: ReadWriteMailbox (en vez de ReadItem) es requerido para
+    poder usar Office.context.mailbox.makeEwsRequestAsync() y reenviar
+    el correo reportado (como adjunto .eml) al buzon de reporte del SOC.
+  -->
+  <Permissions>ReadWriteMailbox</Permissions>
 
   <Rule xsi:type="RuleCollection" Mode="And">
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
