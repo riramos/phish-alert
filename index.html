@@ -407,10 +407,30 @@
     xhr.send(JSON.stringify(payload));
 
     // (2) Reenvio EWS del .eml al buzon del SOC (evidencia para el analista)
-    sendEwsForward(subject, category, commentText, recipient, function (ewsResult) {
-      results.ews = ewsResult;
+    var ewsSettled = false;
+    var ewsTimeoutId = setTimeout(function () {
+      if (ewsSettled) { return; }
+      ewsSettled = true;
+      results.ews = { ok: false, error: "Tiempo de espera agotado (EWS no respondio)." };
       finish();
-    });
+    }, 15000);
+
+    try {
+      sendEwsForward(subject, category, commentText, recipient, function (ewsResult) {
+        if (ewsSettled) { return; }
+        ewsSettled = true;
+        clearTimeout(ewsTimeoutId);
+        results.ews = ewsResult;
+        finish();
+      });
+    } catch (ewsSyncErr) {
+      if (!ewsSettled) {
+        ewsSettled = true;
+        clearTimeout(ewsTimeoutId);
+        results.ews = { ok: false, error: "Excepcion al iniciar EWS: " + ewsSyncErr.message };
+        finish();
+      }
+    }
   }
 
   // ── UI HELPERS ────────────────────────────────────────────────────────
